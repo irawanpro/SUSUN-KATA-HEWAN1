@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permainan Susun Kata Hewan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+        body {
+            font-family: 'Comic Neue', cursive;
+        }
+        .letter-btn {
+            transition: all 0.3s ease;
+        }
+        .letter-btn:hover {
+            transform: scale(1.1);
+        }
+        .correct-answer {
+            animation: bounce 0.5s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                🎮 Susun Kata Hewan 🐾
+            </h1>
+            <p class="text-xl text-white/90">Klik huruf-huruf untuk menyusun nama hewan!</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-bold text-lg">
+                    Skor: <span id="score">0</span>
+                </div>
+                <div class="bg-blue-500 text-white px-6 py-3 rounded-full font-bold text-lg">
+                    Level: <span id="level">1</span>
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="text-8xl mb-4" id="animalEmoji">🐱</div>
+                <div class="text-2xl text-gray-600 mb-4">Susun nama hewan ini:</div>
+                
+                <div class="flex justify-center gap-2 mb-6" id="answerDisplay">
+                    <div class="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50"></div>
+                    <div class="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50"></div>
+                    <div class="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50"></div>
+                    <div class="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50"></div>
+                    <div class="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50"></div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3 mb-8" id="letterButtons">
+                </div>
+
+            <div class="flex justify-center gap-4 mb-6">
+                <button onclick="clearAnswer()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-bold transition-colors">
+                    🗑️ Hapus
+                </button>
+                <button onclick="checkAnswer()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-bold transition-colors">
+                    ✅ Cek Jawaban
+                </button>
+                <button onclick="nextLevel()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-bold transition-colors" id="nextBtn" style="display: none;">
+                    ➡️ Selanjutnya
+                </button>
+            </div>
+
+            <div class="text-center text-xl font-bold" id="message"></div>
+        </div>
+    </div>
+
+    <script>
+        const animals = [
+            { emoji: '🐱', name: 'KUCING', letters: ['K', 'U', 'C', 'I', 'N', 'G'] },
+            { emoji: '🐶', name: 'ANJING', letters: ['A', 'N', 'J', 'I', 'N', 'G'] },
+            { emoji: '🐘', name: 'GAJAH', letters: ['G', 'A', 'J', 'A', 'H'] },
+            { emoji: '🦁', name: 'SINGA', letters: ['S', 'I', 'N', 'G', 'A'] },
+            { emoji: '🐯', name: 'HARIMAU', letters: ['H', 'A', 'R', 'I', 'M', 'A', 'U'] },
+            { emoji: '🐰', name: 'KELINCI', letters: ['K', 'E', 'L', 'I', 'N', 'C', 'I'] },
+            { emoji: '🐻', name: 'BERUANG', letters: ['B', 'E', 'R', 'U', 'A', 'N', 'G'] },
+            { emoji: '🐼', name: 'PANDA', letters: ['P', 'A', 'N', 'D', 'A'] }
+        ];
+
+        let currentAnimal = 0;
+        let currentAnswer = [];
+        let score = 0;
+        let level = 1;
+
+        function initGame() {
+            const animal = animals[currentAnimal];
+            document.getElementById('animalEmoji').textContent = animal.emoji;
+            
+            // Create answer display
+            const answerDisplay = document.getElementById('answerDisplay');
+            answerDisplay.innerHTML = '';
+            for (let i = 0; i < animal.name.length; i++) {
+                const box = document.createElement('div');
+                box.className = 'w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50';
+                box.id = `answer-${i}`;
+                answerDisplay.appendChild(box);
+            }
+
+            // Create shuffled letter buttons
+            const shuffledLetters = [...animal.letters].sort(() => Math.random() - 0.5);
+            const letterButtons = document.getElementById('letterButtons');
+            letterButtons.innerHTML = '';
+            
+            shuffledLetters.forEach((letter, index) => {
+                const button = document.createElement('a');
+                button.href = '#';
+                button.className = 'letter-btn bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-3 rounded-full font-bold text-xl shadow-lg';
+                button.textContent = letter;
+                button.onclick = (e) => {
+                    e.preventDefault();
+                    addLetter(letter, index);
+                };
+                letterButtons.appendChild(button);
+            });
+
+            currentAnswer = [];
+            document.getElementById('message').textContent = '';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        function addLetter(letter, buttonIndex) {
+            const animal = animals[currentAnimal];
+            if (currentAnswer.length < animal.name.length) {
+                currentAnswer.push(letter);
+                const answerBox = document.getElementById(`answer-${currentAnswer.length - 1}`);
+                answerBox.textContent = letter;
+                answerBox.className = 'w-12 h-12 border-2 border-blue-500 rounded-lg flex items-center justify-center text-xl font-bold bg-blue-100';
+                
+                // Hide the clicked button
+                const buttons = document.querySelectorAll('.letter-btn');
+                buttons[buttonIndex].style.opacity = '0.3';
+                buttons[buttonIndex].style.pointerEvents = 'none';
+            }
+        }
+
+        function clearAnswer() {
+            currentAnswer = [];
+            const animal = animals[currentAnimal];
+            
+            // Clear answer display
+            for (let i = 0; i < animal.name.length; i++) {
+                const answerBox = document.getElementById(`answer-${i}`);
+                answerBox.textContent = '';
+                answerBox.className = 'w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-xl font-bold bg-gray-50';
+            }
+            
+            // Show all letter buttons
+            const buttons = document.querySelectorAll('.letter-btn');
+            buttons.forEach(button => {
+                button.style.opacity = '1';
+                button.style.pointerEvents = 'auto';
+            });
+            
+            document.getElementById('message').textContent = '';
+        }
+
+        function checkAnswer() {
+            const animal = animals[currentAnimal];
+            const userAnswer = currentAnswer.join('');
+            
+            if (userAnswer === animal.name) {
+                score += 10;
+                document.getElementById('score').textContent = score;
+                document.getElementById('message').innerHTML = '<span class="text-green-600">🎉 Benar! Hebat sekali!</span>';
+                document.getElementById('answerDisplay').className = 'flex justify-center gap-2 mb-6 correct-answer';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else if (userAnswer.length === animal.name.length) {
+                document.getElementById('message').innerHTML = '<span class="text-red-600">❌ Belum benar, coba lagi!</span>';
+            } else {
+                document.getElementById('message').innerHTML = '<span class="text-orange-600">⚠️ Lengkapi semua huruf dulu!</span>';
+            }
+        }
+
+        function nextLevel() {
+            currentAnimal = (currentAnimal + 1) % animals.length;
+            if (currentAnimal === 0) {
+                level++;
+                document.getElementById('level').textContent = level;
+            }
+            document.getElementById('answerDisplay').className = 'flex justify-center gap-2 mb-6';
+            initGame();
+        }
+
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>
